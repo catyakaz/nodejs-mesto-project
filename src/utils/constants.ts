@@ -1,7 +1,6 @@
 export const DEFAULT_PORT = 3000;
 export const DEFAULT_BASE_PATH = 'http://localhost';
 
-export const STATUS_OK = 200;
 export const STATUS_CREATED = 201;
 export const STATUS_BAD_REQUEST = 400;
 export const STATUS_ERROR_ID = 404;

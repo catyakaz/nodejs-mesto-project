@@ -6,7 +6,6 @@ import {
   VALIDATION_ERROR_NAME,
   STATUS_BAD_REQUEST,
   STATUS_CREATED,
-  STATUS_OK,
 } from '../utils/constants';
 import NotFoundError from '../errors/not-found';
 
@@ -15,7 +14,7 @@ export const getCards = (
   res: Response,
   next: NextFunction,
 ) => Card.find({})
-  .then((cards) => res.status(STATUS_OK).send(cards))
+  .then((cards) => res.send(cards))
   .catch(next);
 
 export const createCard = (
@@ -44,12 +43,9 @@ export const deleteCard = (
   res: Response,
   next: NextFunction,
 ) => Card.findByIdAndRemove({ _id: req.params.cardId })
+  .orFail(new NotFoundError('Нет карточки с таким _id'))
   .then((card) => {
-    if (!card) {
-      throw new NotFoundError('Нет карточки с таким _id');
-    } else {
-      res.status(STATUS_OK).send(card);
-    }
+    res.send(card);
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
       res
@@ -68,21 +64,18 @@ export const likeCard = (
   req.params.cardId,
   { $addToSet: { likes: req.user?._id } },
   { new: true },
-).then((card) => {
-  if (!card) {
-    throw new NotFoundError('Нет карточки с таким _id');
-  } else {
-    res.status(STATUS_OK).send(card);
-  }
-}).catch((err) => {
-  if (err.name === CAST_ERROR_NAME) {
-    res
-      .status(STATUS_BAD_REQUEST)
-      .send({ message: 'Передан некорректный _id карточки для постановки лайка' });
-  } else {
-    next(err);
-  }
-});
+).orFail(new NotFoundError('Нет карточки с таким _id'))
+  .then((card) => {
+    res.send(card);
+  }).catch((err) => {
+    if (err.name === CAST_ERROR_NAME) {
+      res
+        .status(STATUS_BAD_REQUEST)
+        .send({ message: 'Передан некорректный _id карточки для постановки лайка' });
+    } else {
+      next(err);
+    }
+  });
 
 export const dislikeCard = (
   req: SessionRequest,
@@ -92,13 +85,10 @@ export const dislikeCard = (
   req.params.cardId,
   { $pull: { likes: req.user?._id } },
   { new: true },
-).then((card) => {
-  if (!card) {
-    throw new NotFoundError('Нет карточки с таким _id');
-  } else {
-    res.status(STATUS_OK).send(card);
-  }
-})
+).orFail(new NotFoundError('Нет карточки с таким _id'))
+  .then((card) => {
+    res.send(card);
+  })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
       res

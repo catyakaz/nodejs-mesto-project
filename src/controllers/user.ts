@@ -7,7 +7,6 @@ import {
   VALIDATION_ERROR_NAME,
   STATUS_BAD_REQUEST,
   STATUS_CREATED,
-  STATUS_OK,
 } from '../utils/constants';
 
 export const getUsers = (
@@ -15,7 +14,7 @@ export const getUsers = (
   res: Response,
   next: NextFunction,
 ) => User.find({})
-  .then((users) => res.status(STATUS_OK).send(users))
+  .then((users) => res.send(users))
   .catch(next);
 
 export const getUserById = (
@@ -23,12 +22,9 @@ export const getUserById = (
   res: Response,
   next: NextFunction,
 ) => User.findById(req.params.userId)
+  .orFail(new NotFoundError('Нет пользователя с таким _id'))
   .then((user) => {
-    if (!user) {
-      throw new NotFoundError('Нет пользователя с таким _id');
-    } else {
-      res.status(STATUS_OK).send(user);
-    }
+    res.send(user);
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
@@ -69,12 +65,9 @@ export const updateUser = async (
   const { name, about } = req.body;
 
   return User.findByIdAndUpdate(req.user?._id, { name, about }, { new: true, runValidators: true })
+    .orFail(new NotFoundError('Нет пользователя с таким _id'))
     .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Нет пользователя с таким _id');
-      } else {
-        res.status(STATUS_OK).send(user);
-      }
+      res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
         res.status(STATUS_BAD_REQUEST).send({
@@ -94,12 +87,9 @@ export const updateUserAvatar = async (
   const { avatar } = req.body;
 
   return User.findByIdAndUpdate(req.user?._id, { avatar }, { new: true, runValidators: true })
+    .orFail(new NotFoundError('Нет пользователя с таким _id'))
     .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Нет пользователя с таким _id');
-      } else {
-        res.status(STATUS_OK).send(user);
-      }
+      res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
         res.status(STATUS_BAD_REQUEST).send({
