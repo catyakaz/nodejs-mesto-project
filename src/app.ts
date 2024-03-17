@@ -18,6 +18,7 @@ import {
 import errorsMiddlewares from './middlewares/errors';
 import authMiddlewares from './middlewares/auth';
 import { requestLogger, errorLogger } from './middlewares/logger';
+import { authCelebrateError } from './middlewares/celebrateErrors';
 
 const { PORT = DEFAULT_PORT, BASE_PATH = DEFAULT_BASE_PATH } = process.env;
 
@@ -35,18 +36,8 @@ mongoose
 
 app.use(requestLogger);
 
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), login);
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), createUser);
+app.post('/signin', authCelebrateError, login);
+app.post('/signup', authCelebrateError, createUser);
 
 app.use(authMiddlewares);
 

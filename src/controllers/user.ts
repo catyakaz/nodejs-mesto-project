@@ -8,10 +8,10 @@ import ConflictError from '../errors/conflict';
 import {
   CAST_ERROR_NAME,
   VALIDATION_ERROR_NAME,
-  STATUS_BAD_REQUEST,
   STATUS_CREATED,
   DEFAULT_JWT_SECRET,
 } from '../utils/constants';
+import BadRequestError from '../errors/bad-request';
 
 const { JWT_SECRET = DEFAULT_JWT_SECRET } = process.env;
 
@@ -34,9 +34,7 @@ export const getUserById = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      res
-        .status(STATUS_BAD_REQUEST)
-        .send({ message: 'Передан некорректный _id пользователя' });
+      throw new BadRequestError('Передан некорректный _id пользователя');
     } else {
       next(err);
     }
@@ -69,13 +67,16 @@ export const createUser = async (
           password: hash,
         }))
         .then((user) => {
-          res.status(STATUS_CREATED).send(user);
+          res.status(STATUS_CREATED).send({
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+          });
         });
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        res.status(STATUS_BAD_REQUEST).send({
-          message: 'Переданы некорректные данные при создании пользователя',
-        });
+        throw new BadRequestError('Переданы некорректные данные при создании пользователя');
       } else {
         next(err);
       }
@@ -95,9 +96,7 @@ export const updateUser = async (
       res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        res.status(STATUS_BAD_REQUEST).send({
-          message: 'Переданы некорректные данные при обновлении пользователя',
-        });
+        throw new BadRequestError('Переданы некорректные данные при обновлении пользователя');
       } else {
         next(err);
       }
@@ -117,9 +116,7 @@ export const updateUserAvatar = async (
       res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        res.status(STATUS_BAD_REQUEST).send({
-          message: 'Переданы некорректные данные при обновлении аватара пользователя',
-        });
+        throw new BadRequestError('Переданы некорректные данные при обновлении аватара пользователя');
       } else {
         next(err);
       }
@@ -158,9 +155,7 @@ export const getMyInfo = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      res
-        .status(STATUS_BAD_REQUEST)
-        .send({ message: 'Передан некорректный _id пользователя' });
+      throw new BadRequestError('Передан некорректный _id пользователя');
     } else {
       next(err);
     }

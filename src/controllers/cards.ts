@@ -4,11 +4,11 @@ import { SessionRequest } from '../types';
 import {
   CAST_ERROR_NAME,
   VALIDATION_ERROR_NAME,
-  STATUS_BAD_REQUEST,
   STATUS_CREATED,
 } from '../utils/constants';
 import NotFoundError from '../errors/not-found';
 import ForbiddenError from '../errors/forbidden';
+import BadRequestError from '../errors/bad-request';
 
 export const getCards = (
   req: Request,
@@ -30,9 +30,7 @@ export const createCard = (
       res.status(STATUS_CREATED).send(card);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        res.status(STATUS_BAD_REQUEST).send({
-          message: 'Переданы некорректные данные при создании карточки',
-        });
+        throw new BadRequestError('Переданы некорректные данные при создании карточки');
       } else {
         next(err);
       }
@@ -47,15 +45,12 @@ export const deleteCard = (
   .orFail(new NotFoundError('Нет карточки с таким _id'))
   .then((card) => {
     if (card.owner.toString() === req.user?._id.toString()) {
-      card.remove();
-      return res.send({ message: 'Карточка удалена' });
+      card.remove().then(() => res.send({ message: 'Карточка удалена' }));
     }
     throw new ForbiddenError('Вы не владелец этой карточки');
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      res
-        .status(STATUS_BAD_REQUEST)
-        .send({ message: 'Передан некорректный _id карточки' });
+      throw new BadRequestError('Передан некорректный _id карточки');
     } else {
       next(err);
     }
@@ -74,9 +69,7 @@ export const likeCard = (
     res.send(card);
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      res
-        .status(STATUS_BAD_REQUEST)
-        .send({ message: 'Передан некорректный _id карточки для постановки лайка' });
+      throw new BadRequestError('Передан некорректный _id карточки для постановки лайка');
     } else {
       next(err);
     }
@@ -96,9 +89,7 @@ export const dislikeCard = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      res
-        .status(STATUS_BAD_REQUEST)
-        .send({ message: 'Передан некорректный _id карточки для удаления лайка' });
+      throw new BadRequestError('Передан некорректный _id карточки для удаления лайка');
     } else {
       next(err);
     }
