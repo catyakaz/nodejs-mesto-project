@@ -1,13 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import { SessionRequest } from '../types';
 import NotFoundError from '../errors/not-found';
+import ConflictError from '../errors/conflict';
 import {
   CAST_ERROR_NAME,
   VALIDATION_ERROR_NAME,
   STATUS_BAD_REQUEST,
   STATUS_CREATED,
+  DEFAULT_JWT_SECRET,
 } from '../utils/constants';
+
+const { JWT_SECRET = DEFAULT_JWT_SECRET } = process.env;
 
 export const getUsers = (
   req: Request,
@@ -41,11 +47,30 @@ export const createUser = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name,
+    about,
+    avatar,
+    password,
+    email,
+  } = req.body;
 
-  return User.create({ name, about, avatar })
-    .then((user) => {
-      res.status(STATUS_CREATED).send(user);
+  User.findOne({ email })
+    .then((owner) => {
+      if (owner) {
+        throw new ConflictError('Пользователь с таким email уже существует');
+      }
+      return bcrypt.hash(password, 10)
+        .then((hash: string) => User.create({
+          name,
+          about,
+          avatar,
+          email,
+          password: hash,
+        }))
+        .then((user) => {
+          res.status(STATUS_CREATED).send(user);
+        });
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
         res.status(STATUS_BAD_REQUEST).send({
@@ -100,3 +125,43 @@ export const updateUserAvatar = async (
       }
     });
 };
+
+export const login = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET!);
+
+      return res
+        .cookie('jwt', token, {
+          maxAge: 3600000,
+          httpOnly: true,
+          sameSite: true,
+        }).json({ message: 'Вы успешно авторизовались' });
+    })
+    .catch(next);
+};
+
+export const getMyInfo = (
+  req: SessionRequest,
+  res: Response,
+  next: NextFunction,
+) => User.findById(req.user?._id)
+  .orFail(new NotFoundError('Нет пользователя с таким _id'))
+  .then((user) => {
+    res.send(user);
+  })
+  .catch((err) => {
+    if (err.name === CAST_ERROR_NAME) {
+      res
+        .status(STATUS_BAD_REQUEST)
+        .send({ message: 'Передан некорректный _id пользователя' });
+    } else {
+      next(err);
+    }
+  });

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { celebrate, Joi } from 'celebrate';
 import {
   createCard,
   deleteCard,
@@ -6,13 +7,35 @@ import {
   likeCard,
   dislikeCard,
 } from '../controllers/cards';
+import { isUrlValidate } from '../helpers';
 
 const router = Router();
 
 router.get('/', getCards);
-router.post('/', createCard);
-router.delete('/:cardId', deleteCard);
-router.put('/:cardId/likes', likeCard);
-router.delete('/:cardId/likes', dislikeCard);
+
+router.post('/', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30).required(),
+    link: Joi.string().required().custom(isUrlValidate),
+  }),
+}), createCard);
+
+router.delete('/:cardId', celebrate({
+  params: Joi.object().keys({
+    cardId: Joi.string().length(24).hex(),
+  }),
+}), deleteCard);
+
+router.put('/:cardId/likes', celebrate({
+  params: Joi.object().keys({
+    cardId: Joi.string().length(24).hex(),
+  }),
+}), likeCard);
+
+router.delete('/:cardId/likes', celebrate({
+  params: Joi.object().keys({
+    cardId: Joi.string().length(24).hex(),
+  }),
+}), dislikeCard);
 
 export default router;

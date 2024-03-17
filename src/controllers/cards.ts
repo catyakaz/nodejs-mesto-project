@@ -8,6 +8,7 @@ import {
   STATUS_CREATED,
 } from '../utils/constants';
 import NotFoundError from '../errors/not-found';
+import ForbiddenError from '../errors/forbidden';
 
 export const getCards = (
   req: Request,
@@ -39,13 +40,17 @@ export const createCard = (
 };
 
 export const deleteCard = (
-  req: Request,
+  req: SessionRequest,
   res: Response,
   next: NextFunction,
-) => Card.findByIdAndRemove({ _id: req.params.cardId })
+) => Card.findById({ _id: req.params.cardId })
   .orFail(new NotFoundError('Нет карточки с таким _id'))
   .then((card) => {
-    res.send(card);
+    if (card.owner.toString() === req.user?._id.toString()) {
+      card.remove();
+      return res.send({ message: 'Карточка удалена' });
+    }
+    throw new ForbiddenError('Вы не владелец этой карточки');
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
       res

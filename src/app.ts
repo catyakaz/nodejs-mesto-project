@@ -1,22 +1,29 @@
-import express, { NextFunction, Response } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
-import { errors } from 'celebrate';
+import cookieParser from 'cookie-parser';
+import { errors, Joi, celebrate } from 'celebrate';
+
 import usersRouter from './routes/user';
 import cardsRouter from './routes/cards';
 import errorsRouter from './routes/errors';
 
-import { SessionRequest } from './types';
+import { login, createUser } from './controllers/user';
+
 import {
   DEFAULT_PORT,
   DEFAULT_BASE_PATH,
 } from './utils/constants';
+
 import errorsMiddlewares from './middlewares/errors';
+import authMiddlewares from './middlewares/auth';
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const { PORT = DEFAULT_PORT, BASE_PATH = DEFAULT_BASE_PATH } = process.env;
 
 const app = express();
 
+app.use(cookieParser());
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,18 +33,28 @@ mongoose
   .then(() => console.log('Connected to MongoDB.'))
   .catch(console.log);
 
-app.use((req: SessionRequest, res: Response, next: NextFunction) => {
-  req.user = {
-    // @ts-ignore
-    _id: '65eccf991ff50fe702cf9b44',
-  };
+app.use(requestLogger);
 
-  next();
-});
+app.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), login);
+app.post('/signup', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), createUser);
+
+app.use(authMiddlewares);
 
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 app.use('*', errorsRouter);
+
+app.use(errorLogger);
 
 app.use(errors());
 
