@@ -30,7 +30,7 @@ export const createCard = (
       res.status(STATUS_CREATED).send(card);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        throw new BadRequestError('Переданы некорректные данные при создании карточки');
+        next(new BadRequestError('Переданы некорректные данные при создании карточки'));
       } else {
         next(err);
       }
@@ -50,7 +50,7 @@ export const deleteCard = (
     throw new ForbiddenError('Вы не владелец этой карточки');
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      throw new BadRequestError('Передан некорректный _id карточки');
+      next(new BadRequestError('Передан некорректный _id карточки'));
     } else {
       next(err);
     }
@@ -69,7 +69,7 @@ export const likeCard = (
     res.send(card);
   }).catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      throw new BadRequestError('Передан некорректный _id карточки для постановки лайка');
+      next(new BadRequestError('Передан некорректный _id карточки для постановки лайка'));
     } else {
       next(err);
     }
@@ -89,7 +89,7 @@ export const dislikeCard = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      throw new BadRequestError('Передан некорректный _id карточки для удаления лайка');
+      next(new BadRequestError('Передан некорректный _id карточки для удаления лайка'));
     } else {
       next(err);
     }

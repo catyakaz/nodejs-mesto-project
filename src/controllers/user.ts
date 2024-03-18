@@ -34,7 +34,7 @@ export const getUserById = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      throw new BadRequestError('Передан некорректный _id пользователя');
+      next(new BadRequestError('Передан некорректный _id пользователя'));
     } else {
       next(err);
     }
@@ -76,7 +76,7 @@ export const createUser = async (
         });
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        throw new BadRequestError('Переданы некорректные данные при создании пользователя');
+        next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
       } else {
         next(err);
       }
@@ -96,7 +96,7 @@ export const updateUser = async (
       res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        throw new BadRequestError('Переданы некорректные данные при обновлении пользователя');
+        next(new BadRequestError('Переданы некорректные данные при обновлении пользователя'));
       } else {
         next(err);
       }
@@ -116,7 +116,7 @@ export const updateUserAvatar = async (
       res.send(user);
     }).catch((err) => {
       if (err.name === VALIDATION_ERROR_NAME) {
-        throw new BadRequestError('Переданы некорректные данные при обновлении аватара пользователя');
+        next(new BadRequestError('Переданы некорректные данные при обновлении аватара пользователя'));
       } else {
         next(err);
       }
@@ -155,7 +155,7 @@ export const getMyInfo = (
   })
   .catch((err) => {
     if (err.name === CAST_ERROR_NAME) {
-      throw new BadRequestError('Передан некорректный _id пользователя');
+      next(new BadRequestError('Передан некорректный _id пользователя'));
     } else {
       next(err);
     }
